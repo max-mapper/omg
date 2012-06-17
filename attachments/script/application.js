@@ -29,9 +29,32 @@ $(function() {
     app.profile = profile
     render('nav', '#navigation', profile)
     if (!profile) return
-    render('profile', '#wrapper', profile)
     getFeed(function(err, feed) {
-      console.log(feed)
+		var items = _.map(feed.data, function(item) {
+			return {
+				image: item.images.thumbnail.url
+			} 
+		})
+	    render('feed', '#wrapper', {items: items})
+		var box = $('.box')
+	    var veiled = function(e) {
+	      var veil = $('.veil')
+	      $(e.target).toggleClass("veil")
+
+	    }
+	    box.click(veiled)
+
+	    var select = $('#select')
+	    var selection = function(e) {
+	      console.log($(".veil"))
+	    }
+	    select.click(selection)
+	
     })
   })
+
+    
+
+
+
 })
