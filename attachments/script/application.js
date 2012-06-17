@@ -29,20 +29,29 @@ function getFeed(next, cb) {
 
 function renderFeed(err, feed) {
   app.next_url = feed.pagination.next_url
-  var items = _.map(feed.data, function(item) {
-    return {
-      image: item.images.thumbnail.url
-    } 
+  _.each(feed.data, function(item) {
+    item.image = item.images.thumbnail.url
   })
   // todo this code sucks
   if ($('#wrapper .images').length === 0) $('#wrapper').append(render('feedContainer'))
   var imgs = $('#wrapper .images')
-  imgs.append(render('feed', {items: items}))
+  imgs.append(render('feed', {items: feed.data}))
+}
+
+function addPhotoToDataset(id) {
+  var dataset = $('.selected').attr('data-set')
+  var doc = _.find(app.gramCache, function(item) { return item.id+"" === id+"" })
+  console.log(dataset, id, doc)
+  request({url:'/add-' + dataset, method: 'POST', json: doc}, function(err, resp, json) {
+    console.log(err, json)
+  })
 }
 
 function setupClicks() {
   var box = $('.box')
   var veiled = function(e) {
+    var id = $(e.currentTarget).attr('data-id')
+    addPhotoToDataset(id)
     $(e.currentTarget).find('.veilbox').toggleClass("veil")
   }
   box.live('click', veiled)
@@ -82,8 +91,8 @@ function addMarkerToMap(photo) {
   marker.bindPopup(render('mapMarker', meta), {closeButton: false, offset: new L.Point(0, -40)})
 }
 
-function showCachedPhotosOnMap() {
-  _.each(app.gramCache, function(photo) {
+function showPhotosOnMap(photos) {
+  _.each(photos, function(photo) {
     addMarkerToMap(photo)
   })
 }
@@ -113,7 +122,7 @@ $(function() {
     },
 	  home: function() {
       $('#wrapper').html(render('home'))
-      $('#listbox').html(render('recentLists', {action: '', title: "Recently Updated Lists"}))
+      $('#listbox').html(render('recentLists', {action: '/view', title: "Recently Updated Lists"}))
       showMap()
       locateAndSetMap()
 	  }
@@ -127,8 +136,6 @@ $(function() {
     '/': {
       on: function() {
         window.location.href="/#/home"
-        
-        
       }
     },
     '/:page': { 
@@ -139,7 +146,14 @@ $(function() {
     },
     '/edit/:page': { 
       on: function(page) {
-        console.log('edit', page)
+
+      }
+    },
+    '/view/:page': { 
+      on: function(page) {
+        request({url:'/list-' + page, json: true}, function(err, resp, data) {
+          showPhotosOnMap(data.items)
+        })
       }
     }
   }).init('/')

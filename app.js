@@ -44,11 +44,24 @@ t.route('/logout', function (req, resp) {
   resp.end()
 })
 
-t.route('/add', function (req, resp) {
-  console.log(req.qs)
-  resp.setHeader('content-type', 'application/json')
-  resp.end("{}")
+t.route('/list-:dataset', function (req, resp) {
+  getItems(req.params.dataset, function(err, items) {
+    resp.setHeader('content-type', 'application/json')
+    resp.end(JSON.stringify({items: items}))
+  })
 })
+
+t.route('/add-:dataset', function (req, resp) {
+  req.on('json', function(json) {
+    resp.setHeader('content-type', 'application/json')
+    getDB(function(err, db) {
+      db.put(req.params.dataset + ':' + json.id, JSON.stringify(json), function(err) {
+        resp.end('{"ok": true}')
+      })
+    })
+    
+  })
+}).must('auth').methods('PUT', 'POST')
   
 t.route('/instagram', function (req, resp) {
   var u = 'https://api.instagram.com/oauth/authorize'
@@ -120,6 +133,35 @@ function getDB(cb) {
   leveldb.open("data.leveldb", { create_if_missing: true }, function(err, db) {
     t.db = db
     cb(err, db)
+  })
+}
+
+function getItems(dataset, cb) {
+  var items = []
+  getDB(function(err, db) {
+    getLast(function(err, last) {
+      if (err || !last) return cb(false, [])
+      db.iterator(function(err, iterator) {
+        iterator.forRange(function(err, key, val) {
+           if (key.match(dataset)) items.push(JSON.parse(val))
+           if (key === last) cb(false, items)
+         })
+      })
+    })
+  })
+}
+
+function getLast(cb) {
+  getDB(function(err, db) {
+    db.iterator(function(err, iterator) {
+      if (err) return cb(err)
+      iterator.last(function(err) {
+        if (err) return cb(err)
+        iterator.current(function(err, key, val) {
+          cb(err, key)
+        })
+      })
+    })
   })
 }
 

@@ -85,7 +85,7 @@ p {margin: 0px; padding: 0px;}
   
   <script type="text/mustache" class="feedTemplate">
     {{#items}}
-      <div class="box" style="background-image:url({{image}})">
+      <div class="box" data-id="{{id}}" style="background-image:url({{image}})">
         <div class="veilbox"></div>
       </div>
     {{/items}}
@@ -135,19 +135,19 @@ p {margin: 0px; padding: 0px;}
    
    <script type="text/mustache" class="recentListsTemplate">
      <h3>{{title}}</h3>
-     <div class="listGroup">
+     <div class="listGroup" data-set="foliage">
        <a href="/#{{action}}/foliage">
          <p class="listName">Edible Foliage</p>
          <p class="listCity">Oakland, Ca</p>
        </a>
      </div>
-     <div class="listGroup">
+     <div class="listGroup" data-set="cats">
        <a href="/#{{action}}/cats">
          <p class="listName">Cats</p>
          <p class="listCity">Everywhere</p>
        </a>
      </div>
-     <div class="listGroup">
+     <div class="listGroup" data-set="horchata">
        <a href="/#{{action}}/horchata">
          <p class="listName">Horchata @ Taco Trucks</p>
          <p class="listCity">San Francisco, Ca</p>
