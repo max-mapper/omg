@@ -96,11 +96,15 @@ $(function() {
       $('#wrapper').html('')
       getFeed(renderFeed)
       $('#wrapper').append(render('listPicker'))
-      $('#lists').html(render('recentLists'))
+      $('#lists').html(render('recentLists', {action: '/edit', title: "Select a list to add photos to"}))
+      $('.listGroup').click(function(e) {
+        $('.selected').removeClass('selected')
+        $(e.currentTarget).toggleClass('selected')
+      })
     },
 	  home: function() {
       $('#wrapper').html(render('home'))
-      $('#listbox').html(render('recentLists'))
+      $('#listbox').html(render('recentLists', {action: '', title: "Recently Updated Lists"}))
       showMap()
       locateAndSetMap()
 	  }
@@ -126,6 +130,11 @@ $(function() {
       on: function(page) {
         console.log(page)
         routes[page]()
+      }
+    },
+    '/edit/:page': { 
+      on: function(page) {
+        console.log('edit', page)
       }
     }
   }).init('/')

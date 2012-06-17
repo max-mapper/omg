@@ -43,6 +43,12 @@ t.route('/logout', function (req, resp) {
   resp.setHeader('location', process.env['OMG_VHOST'])
   resp.end()
 })
+
+t.route('/add', function (req, resp) {
+  console.log(req.qs)
+  resp.setHeader('content-type', 'application/json')
+  resp.end("{}")
+})
   
 t.route('/instagram', function (req, resp) {
   var u = 'https://api.instagram.com/oauth/authorize'

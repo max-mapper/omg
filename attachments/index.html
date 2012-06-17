@@ -35,6 +35,7 @@ h4 {font-size: 20px; font-family: Garamond, serif; font-weight: normal; margin: 
 .listGroup {margin: 10px 0px; padding: 3px 0px 3px 7px;; background: #fff;}
 .listGroup a, .listGroup a:visted, .listgroup a:active {display: block; text-decoration: none;}
 .listGroup a:hover {display: block; width: 100%; height: 100%; background: #acacac;}
+.listGroup.selected { background: #e2d75c}
 p {margin: 0px; padding: 0px;}
 .listName {font-family: Garamond, sans-serif; font-size: 18px; color: #E56633;}
 .listCity {font-family: Arial, sans-serif; font-size: 10px; letter-spacing: 1px; color: #9BB89D; text-transform: uppercase;}
@@ -132,21 +133,21 @@ p {margin: 0px; padding: 0px;}
    </script>
    
    <script type="text/mustache" class="recentListsTemplate">
-     <h3>Recently Updated Lists</h3>
+     <h3>{{title}}</h3>
      <div class="listGroup">
-       <a href="/#/foliage">
+       <a href="/#{{action}}/foliage">
          <p class="listName">Edible Foliage</p>
          <p class="listCity">Oakland, Ca</p>
        </a>
      </div>
      <div class="listGroup">
-       <a href="/#/cats">
+       <a href="/#{{action}}/cats">
          <p class="listName">Cats</p>
          <p class="listCity">Everywhere</p>
        </a>
      </div>
      <div class="listGroup">
-       <a href="/#/horchata">
+       <a href="/#{{action}}/horchata">
          <p class="listName">Horchata @ Taco Trucks</p>
          <p class="listCity">San Francisco, Ca</p>
        </a>
