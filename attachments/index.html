@@ -17,7 +17,7 @@
   <script src="script/application.js"></script>
   
   <style>
-.box {border: 6px solid #ff00ff; float: left; margin-right: 7px; }
+.box { border: 6px solid magenta; float: left; height: 150px; width: 150px; margin-right: 7px; margin-bottom: 7px; }
 .box img {margin: 0px;}
 .row {margin-bottom: 7px; overflow: auto;}
 .veil {background-image: url(veil.png); background-size: 150px 150px; opacity: .7;}
@@ -63,12 +63,7 @@ p {margin: 0px; padding: 0px;}
    {{#token}}
       <div class="toggle map">
         <div class="navitem">
-          <a href="#/map">Map</a>
-        </div>
-      </div>
-      <div class="toggle list">
-        <div class="navitem">
-          <a href="#/list">List</a>
+          <a href="#/feed">My Photos</a>
         </div>
       </div>
     {{/token}}
@@ -90,9 +85,19 @@ p {margin: 0px; padding: 0px;}
         <img src="{{image}}">
       </div>
     {{/items}}
-    <div id="select" class="button">
-      <a href="#">Load more!</a>
+  </script>
+  
+  <script type="text/mustache" class="feedContainerTemplate">
+    <div class="right">
+      <div class="images"></div>
+      <div id="select" class="button">
+        <a href="#">Load more!</a>
+      </div>
     </div>
+  </script>
+  
+  <script type="text/mustache" class="listPickerTemplate">
+    <div class="left">woo</div>
   </script>
   
   <script type="text/mustache" class="mapTemplate">

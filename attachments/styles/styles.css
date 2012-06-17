@@ -3,12 +3,6 @@
 ----------------------
 */
 
-* {
-  box-sizing:border-box;
-  -webkit-box-sizing:border-box;
-  -moz-box-sizing:border-box;
-}
-
 .clear { clear: both; }
 .hidden { display: none; }
 .invisible { opacity: 0; }
@@ -162,6 +156,9 @@ h2 { font-size: 120%; padding-bottom: 15px; }
 /* Main */
 
 #wrapper { overflow: auto; }
+
+#wrapper .right { overflow: scroll; height:505px; float: right; width: 50%; }
+#wrapper .left { height:505px; float: left; width: 50%; }
 
 .caption { font-style: italic; }
 

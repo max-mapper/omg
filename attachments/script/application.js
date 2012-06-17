@@ -34,7 +34,10 @@ function renderFeed(err, feed) {
       image: item.images.thumbnail.url
     } 
   })
-  $('#wrapper').append(render('feed', {items: items}))
+  // todo this code sucks
+  if ($('#wrapper .images').length === 0) $('#wrapper').append(render('feedContainer'))
+  var imgs = $('#wrapper .images')
+  imgs.append(render('feed', {items: items}))
 }
 
 function setupClicks() {
@@ -49,7 +52,6 @@ function setupClicks() {
   var selection = function(e) {
     e.preventDefault()
     getFeed(app.next_url, renderFeed)
-    $(e.currentTarget).remove()
   }
   select.live('click', selection)
 }
@@ -90,15 +92,10 @@ function showCachedPhotosOnMap() {
 
 $(function() {
   var routes = {
-    map: function() {
-      $('#wrapper').html(render('map'))
-      showMap()
-      locateAndSetMap()
-      showCachedPhotosOnMap()
-    },
-    list: function() {
+    feed: function() {
       $('#wrapper').html('')
       getFeed(renderFeed)
+      $('#wrapper').append(render('listPicker'))
     },
 	  home: function() {
       $('#wrapper').html(render('home'))
