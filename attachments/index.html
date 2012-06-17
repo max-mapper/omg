@@ -12,6 +12,15 @@
   <script src="script/request.js"></script>
   <script src="script/bundle.js"></script>
   <script src="script/application.js"></script>
+  
+  <style>
+  .box {border: 3px solid #fff; float: left; margin-right: 7px; }
+  .row {margin-bottom: 7px; overflow: auto;}
+  .veil {background-image: url(veil.png); opacity: .7;}
+  #select a {background: salmon; display: block; float: left; padding: 10px; box-shadow: 0 0 5px 
+    #888; text-decoration: none;}
+
+  </style>
 
 </head>
 <body> 
@@ -51,6 +60,21 @@
       </div>
     </div>
   </script>
+  
+  <script type="text/mustache" class="feedTemplate">
+  {{#items}}
+   <div class="box">
+    <img src="{{image}}">
+    </div>
+   
+  {{/items}}
+    <div id="select" class="button">
+       <a href="#">Add these to the list!</a>
+       </div>
+  </script>
+  
+  
+  
   
 </body> 
 </html>
