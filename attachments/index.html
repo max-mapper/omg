@@ -17,20 +17,34 @@
   <script src="script/application.js"></script>
   
   <style>
-  .box {border: 6px solid #ff00ff; float: left; margin-right: 7px; }
-  .box img {margin: 0px;}
-  .row {margin-bottom: 7px; overflow: auto;}
-  .veil {background-image: url(veil.png); background-size: 150px 150px; opacity: .7;}
-  #select a {background: salmon; display: block; float: left; padding: 10px; box-shadow: 0 0 5px 
+.box {border: 6px solid #ff00ff; float: left; margin-right: 7px; }
+.box img {margin: 0px;}
+.row {margin-bottom: 7px; overflow: auto;}
+.veil {background-image: url(veil.png); background-size: 150px 150px; opacity: .7;}
+#select a {background: salmon; display: block; float: left; padding: 10px; box-shadow: 0 0 5px 
     #888; text-decoration: none; margin: 55px 0 0 35px; }
-
+#breadbox {position: relative; height: 700px; width: 100%; overflow: auto; background: #FAF4ED;}
+.logo {position: relative; float: left; width: 300px; height: 309px; background-image: url(images/logo_sml.png); background-size: 300px 309px;}
+#homebox {position: relative; overflow: auto; background: salmon; padding: 20px; margin-top: 30px;}
+h2 {font-size: 18px; font-family: Arial, sans-serif; margin: 0px; padding: 0px;}
+h3 {font-size: 16px; font-family: Arial, sans-serif; margin: 0px; padding: 0px 0px 15px 0px;}
+h4 {font-size: 14px; font-family: Garamond, serif; margin: 0px; padding: 0px;}
+#listbox {position: relative; margin-top: 30px; background: yellow; width: 30%; height: 500px; float: left; padding-right: 15px;}
+#listmap {position: relative; margin-top: 30px; background: pink; width: 70%; height: 500px; float: left; padding-left: 15px;}
+.listGroup {margin: 10px 0px; padding: 3px 0px 3px 7px;; background: #fff;}
+.listGroup a, .listGroup a:visted, .listgroup a:active {display: block; text-decoration: none;}
+.listGroup a:hover {display: block; width: 100%; height: 100%; background: #acacac;}
+p {margin: 0px; padding: 0px;}
+.listName {font-family: Garamond, sans-serif; font-size: 18px; color: orange;}
+.listCity {font-family: Arial, sans-serif; font-size: 10px; letter-spacing: 1px; color: #9BB89D; text-transform: uppercase;}
+  
   </style>
 
 </head>
 <body> 
   <div id="container">
     <div class="header">
-      <div class="title">OUTSIDE MAPPERS GUILD</div>
+      <div class="title"> <a href="#/home">OUTSIDE MAPPERS GUILD</a></div>
       <div class="subtitle"></div>
       <div class="channel"></div>
       <div id="navigation">
@@ -89,6 +103,38 @@
     <img src="{{thumbnail}}">
     <p>{{venue}}</p>
   </script>
+  
+  <script type="text/mustache" class="homeTemplate">
+    <div id="breadbox">
+    <div class="logo"></div>
+    <div id="homebox">
+    <h2>Go Outside and Map!</h3>
+    <h4>Use your geo-tagged instagram photos to create
+    or add to lists of cool things in your city.</h4>
+    <div id="listbox">
+     <h3>Recently Updated Lists</h3>
+     <div class="listGroup">
+     <a href="#">
+     <p class="listName">Fennel</p>
+     <p class="listCity">Oakland, Ca</p>
+     </a>
+     </div><!-- end listGroup -->
+     <div class="listGroup">
+     <p class="listName">Lemon Trees</p>
+     <p class="listCity">San Francisco, Ca</p>
+     </div><!-- end listGroup -->
+     <div class="listGroup">
+      <p class="listName">Horchata @ Taco Trucks</p>
+      <p class="listCity">San Francisco, Ca</p>
+      </div><!-- end listGroup -->
+    </div>
+    <div id="listmap">
+    
+    </div>
+    </div>
+    </div>
+   </script>
+  
   
   
   

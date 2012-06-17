@@ -99,7 +99,10 @@ $(function() {
     list: function() {
       $('#wrapper').html('')
       getFeed(renderFeed)
-    }
+    },
+	  home: function() {
+      $('#wrapper').html(render('home'))
+	  }
   }
   
   // reset to front page on refresh for now
@@ -114,7 +117,7 @@ $(function() {
           $('#navigation').html(render('nav', profile))
           if (!profile) return
           setupClicks()
-          window.location.href="/#/list"
+          window.location.href="/#/home"
         })
       }
     },

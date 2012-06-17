@@ -158,10 +158,10 @@ h2 { font-size: 120%; padding-bottom: 15px; }
 
 #navigation .toggle { float: left; min-width: 35px; height: 35px; }
 #navigation .toggle:hover, #navigation .toggle.active { background: rgba(0,0,0, 0.1); }
-#navigation .navitem { margin: 0px 10px }
+#navigation .navitem { margin: 0px 10px; }
 /* Main */
 
-#wrapper { overflow: scroll }
+#wrapper { overflow: auto; }
 
 .caption { font-style: italic; }
 
