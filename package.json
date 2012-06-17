@@ -13,6 +13,9 @@
     "underscore",
     "leveldb"
   ],
+  "dependencies": {
+    "plumbdb": "0.0.3"
+  },
   "version": "0.0.1",
   "scripts": {
     "start": "app.js"

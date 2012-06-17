@@ -4,7 +4,7 @@ var filed = require('filed')
 var gist = require('gist')
 var request = require('request').defaults({json: true})
 var qs = require('querystring')
-var leveldb = require('leveldb')
+var plumbdb = require('plumbdb')
 var https = require('https')
 var _ = require('underscore')
 
@@ -54,10 +54,8 @@ t.route('/list-:dataset', function (req, resp) {
 t.route('/add-:dataset', function (req, resp) {
   req.on('json', function(json) {
     resp.setHeader('content-type', 'application/json')
-    getDB(function(err, db) {
-      db.put(req.params.dataset + ':' + json.id, JSON.stringify(json), function(err) {
-        resp.end('{"ok": true}')
-      })
+    t.db.put(req.params.dataset + ':' + json.id, JSON.stringify(json), function(err) {
+      resp.end('{"ok": true}')
     })
     
   })
@@ -106,63 +104,36 @@ t.route('/*').files(htmldir)
 t.auth(function(req, resp, cb) {
   var token = extractToken(req)
   if (!token) return cb(null)
-  getDB(function(err, db) {
-    db.get(token, function(err, doc) {
-      if (err || !doc) return cb(null)
-      cb(JSON.parse(doc))
-    })
+  t.db.get(token, function(err, doc) {
+    if (err || !doc) return cb(null)
+    cb(JSON.parse(doc))
   })
 })
 
 function saveUser(data, resp) {
-  getDB(function(err, db) {
-    db.put(data.access_token, JSON.stringify(data.user), function(err) {
-      if (err) {
-        resp.statusCode = 500
-        return resp.end('error saving user')
-      }
-      resp.statusCode = 302
-      resp.setHeader('location', process.env['OMG_VHOST'])
-      resp.end()
-    })
-  })
-}
-
-function getDB(cb) {
-  if (t.db) return cb(false, t.db)
-  leveldb.open("data.leveldb", { create_if_missing: true }, function(err, db) {
-    t.db = db
-    cb(err, db)
+  t.db.put(data.access_token, JSON.stringify(data.user), function(err) {
+    if (err) {
+      resp.statusCode = 500
+      return resp.end('error saving user')
+    }
+    resp.statusCode = 302
+    resp.setHeader('location', process.env['OMG_VHOST'])
+    resp.end()
   })
 }
 
 function getItems(dataset, cb) {
   var items = []
-  getDB(function(err, db) {
-    getLast(function(err, last) {
-      if (err || !last) return cb(false, [])
-      db.iterator(function(err, iterator) {
-        iterator.forRange(function(err, key, val) {
-           if (key.match(dataset)) items.push(JSON.parse(val))
-           if (key === last) cb(false, items)
-         })
-      })
+  var error = false
+  t.plumb.keyStream(dataset)
+    .on('data', function(doc) { items.push(doc) })
+    .on('error', function(err) {
+      error = true
+      cb(err)
     })
-  })
-}
-
-function getLast(cb) {
-  getDB(function(err, db) {
-    db.iterator(function(err, iterator) {
-      if (err) return cb(err)
-      iterator.last(function(err) {
-        if (err) return cb(err)
-        iterator.current(function(err, key, val) {
-          cb(err, key)
-        })
-      })
+    .on('end', function() {
+      if (!error) cb(false, items)
     })
-  })
 }
 
 function setCookie(id, resp) {
@@ -190,6 +161,9 @@ function parseCookies(cookie) {
   return cookies
 }
 
-t.httpServer.listen(8000, function () {
-  console.log('dun runnin')
+t.plumb = plumbdb('data', function(err, db) {
+  t.db = db
+  t.httpServer.listen(8000, function () {
+    console.log('dun runnin')
+  })
 })
