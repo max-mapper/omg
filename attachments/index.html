@@ -21,6 +21,7 @@
 .box img {margin: 0px;}
 .row {margin-bottom: 7px; overflow: auto;}
 .veil {background-image: url(images/veil.png); background-size: 150px 150px; opacity: .7;}
+.veilbox { height: 150px; }
 #select a {background: salmon; display: block; float: left; padding: 10px; box-shadow: 0 0 5px 
     #888; text-decoration: none; margin: 55px 0 0 35px; }
 #breadbox {position: relative; height: 700px; width: 100%; overflow: auto; }
@@ -84,8 +85,8 @@ p {margin: 0px; padding: 0px;}
   
   <script type="text/mustache" class="feedTemplate">
     {{#items}}
-      <div class="box">
-        <img src="{{image}}">
+      <div class="box" style="background-image:url({{image}})">
+        <div class="veilbox"></div>
       </div>
     {{/items}}
   </script>

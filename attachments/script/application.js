@@ -43,8 +43,7 @@ function renderFeed(err, feed) {
 function setupClicks() {
   var box = $('.box')
   var veiled = function(e) {
-    var veil = $('.veil')
-    $(e.target).toggleClass("veil")
+    $(e.currentTarget).find('.veilbox').toggleClass("veil")
   }
   box.live('click', veiled)
 
@@ -89,6 +88,16 @@ function showCachedPhotosOnMap() {
   })
 }
 
+function bootstrap() {
+  getProfile(function(err, profile) {
+    if (err || profile.error) profile = false
+    app.profile = profile
+    $('#navigation').html(render('nav', profile))
+    if (!profile) return
+    setupClicks()
+  })
+}
+
 
 $(function() {
   var routes = {
@@ -112,18 +121,14 @@ $(function() {
   
   // reset to front page on refresh for now
   window.location.href="/#/"
-
+  bootstrap()
+  
   Router({
     '/': {
       on: function() {
-        getProfile(function(err, profile) {
-          if (err || profile.error) profile = false
-          app.profile = profile
-          $('#navigation').html(render('nav', profile))
-          if (!profile) return
-          setupClicks()
-          window.location.href="/#/home"
-        })
+        window.location.href="/#/home"
+        
+        
       }
     },
     '/:page': { 
