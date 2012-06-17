@@ -1,0 +1,23 @@
+{
+  "name": "omg",
+  "subdomain": "omg",
+  "domains": [
+    "outmapp.in"
+  ],
+  "bundleDependencies": [
+    "async",
+    "request",
+    "tako",
+    "filed",
+    "mapleTree",
+    "underscore",
+    "leveldb"
+  ],
+  "version": "0.0.1",
+  "scripts": {
+    "start": "app.js"
+  },
+  "engines": {
+    "node": "v0.6.x"
+  }
+}

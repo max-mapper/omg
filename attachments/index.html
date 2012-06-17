@@ -1,0 +1,56 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>OMG</title>
+  
+  <link href="styles/styles.css" media="screen" rel="stylesheet" type="text/css" />
+  
+  <script src="script/jquery-1.6.1.min.js"></script>
+  <script src="script/jquery.mustache.js"></script>
+  <script src="script/underscore.js"></script>
+  <script src="script/request.js"></script>
+  <script src="script/bundle.js"></script>
+  <script src="script/application.js"></script>
+
+</head>
+<body> 
+  <div id="container">
+    <div class="header">
+      <div class="title">OUTSIDE MAPPERS GUILD</div>
+      <div class="subtitle"></div>
+      <div class="channel"></div>
+      <div id="navigation">
+       
+      </div>
+    </div>
+    
+    <div id="wrapper"></div>
+  </div>
+  
+  <script type="text/mustache" class="profileTemplate">
+    <img style="width: 800px; height:800px" src="{{profile_picture}}">
+  </script>
+  
+  <script type="text/mustache" class="navTemplate">
+   {{#token}}
+      <div class="toggle profile">
+        <div class="navitem">
+          <a href="/me">Profile</a>
+        </div>
+      </div>
+    {{/token}}
+    <div class="toggle home">
+      <div class="navitem">
+        {{#token}}
+          <a href="/logout">Logout</a>
+        {{/token}}
+        {{^token}}
+          <a href="/instagram">Login with Instagram</a>
+        {{/token}}
+      </div>
+    </div>
+  </script>
+  
+</body> 
+</html>
