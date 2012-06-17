@@ -29,9 +29,9 @@
 h2 {font-size: 24px; font-family: Arial, sans-serif; margin: 0px; padding: 0px; text-transform: uppercase; color: #E56633;}
 h3 {font-size: 18px; font-family: Arial, sans-serif; margin: 0px; padding: 0px 0px 15px 0px; color: #5E5548;}
 h4 {font-size: 20px; font-family: Garamond, serif; font-weight: normal; margin: 0px; padding: 0px;}
-.tagline {width: 400px; margin-top: 15px;}
+.tagline {max-width: 400px; margin-top: 15px;}
 #listbox {position: relative; margin-top: 30px; width: 30%; height: 500px; float: left; padding-right: 15px;}
-#listmap {position: relative; margin-top: 30px; width: 70%; height: 500px; float: left; padding-left: 15px;}
+#listmap {position: relative; margin-top: 30px; width: 500px; height: 500px; float: left; padding-left: 15px;}
 .listGroup {margin: 10px 0px; padding: 3px 0px 3px 7px;; background: #fff;}
 .listGroup a, .listGroup a:visted, .listgroup a:active {display: block; text-decoration: none;}
 .listGroup a:hover {display: block; width: 100%; height: 100%; background: #acacac;}
@@ -99,7 +99,9 @@ p {margin: 0px; padding: 0px;}
   </script>
   
   <script type="text/mustache" class="listPickerTemplate">
-    <div class="left">woo</div>
+    <div class="left">
+      <div id="lists"></div>
+    </div>
   </script>
   
   <script type="text/mustache" class="mapTemplate">
@@ -121,21 +123,6 @@ p {margin: 0px; padding: 0px;}
     <h4 class="tagline">Use your geo-tagged instagram photos to create
     or add to lists of cool things in your city.</h4>
     <div id="listbox">
-     <h3>Recently Updated Lists</h3>
-     <div class="listGroup">
-     <a href="#">
-     <p class="listName">Fennel</p>
-     <p class="listCity">Oakland, Ca</p>
-     </a>
-     </div><!-- end listGroup -->
-     <div class="listGroup">
-     <p class="listName">Lemon Trees</p>
-     <p class="listCity">San Francisco, Ca</p>
-     </div><!-- end listGroup -->
-     <div class="listGroup">
-      <p class="listName">Horchata @ Taco Trucks</p>
-      <p class="listCity">San Francisco, Ca</p>
-      </div><!-- end listGroup -->
     </div>
     <div id="listmap">
      <div id="mapbox"></div>
@@ -143,12 +130,28 @@ p {margin: 0px; padding: 0px;}
     </div>
     </div>
    </script>
-  
-  
-  
-  
-  
-  
-  
+   
+   <script type="text/mustache" class="recentListsTemplate">
+     <h3>Recently Updated Lists</h3>
+     <div class="listGroup">
+       <a href="/#/foliage">
+         <p class="listName">Edible Foliage</p>
+         <p class="listCity">Oakland, Ca</p>
+       </a>
+     </div>
+     <div class="listGroup">
+       <a href="/#/cats">
+         <p class="listName">Cats</p>
+         <p class="listCity">Everywhere</p>
+       </a>
+     </div>
+     <div class="listGroup">
+       <a href="/#/horchata">
+         <p class="listName">Horchata @ Taco Trucks</p>
+         <p class="listCity">San Francisco, Ca</p>
+       </a>
+     </div>
+   </script>
+
 </body> 
 </html>

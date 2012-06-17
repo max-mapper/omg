@@ -158,7 +158,7 @@ h2 { font-size: 120%; padding-bottom: 15px; }
 #wrapper { overflow: auto; }
 
 #wrapper .right { overflow: scroll; height:505px; float: right; width: 50%; }
-#wrapper .left { height:505px; float: left; width: 50%; }
+#wrapper .left { height:505px; float: left; width: 45%; }
 
 .caption { font-style: italic; }
 

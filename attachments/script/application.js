@@ -96,9 +96,11 @@ $(function() {
       $('#wrapper').html('')
       getFeed(renderFeed)
       $('#wrapper').append(render('listPicker'))
+      $('#lists').html(render('recentLists'))
     },
 	  home: function() {
       $('#wrapper').html(render('home'))
+      $('#listbox').html(render('recentLists'))
       showMap()
       locateAndSetMap()
 	  }
