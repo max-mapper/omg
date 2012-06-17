@@ -23,7 +23,7 @@
 /* Common styles
 -------------------------------------------------------------------------------*/
 
-#mapbox { height: 600px; }
+#mapbox { height: 500px; }
 .leaflet-popup p { margin: 0 !important; }
 
 svg {

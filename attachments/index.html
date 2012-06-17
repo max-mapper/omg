@@ -23,20 +23,22 @@
 .veil {background-image: url(veil.png); background-size: 150px 150px; opacity: .7;}
 #select a {background: salmon; display: block; float: left; padding: 10px; box-shadow: 0 0 5px 
     #888; text-decoration: none; margin: 55px 0 0 35px; }
-#breadbox {position: relative; height: 700px; width: 100%; overflow: auto; background: #FAF4ED;}
-.logo {position: relative; float: left; width: 300px; height: 309px; background-image: url(images/logo_sml.png); background-size: 300px 309px;}
-#homebox {position: relative; overflow: auto; background: salmon; padding: 20px; margin-top: 30px;}
-h2 {font-size: 18px; font-family: Arial, sans-serif; margin: 0px; padding: 0px;}
-h3 {font-size: 16px; font-family: Arial, sans-serif; margin: 0px; padding: 0px 0px 15px 0px;}
-h4 {font-size: 14px; font-family: Garamond, serif; margin: 0px; padding: 0px;}
-#listbox {position: relative; margin-top: 30px; background: yellow; width: 30%; height: 500px; float: left; padding-right: 15px;}
-#listmap {position: relative; margin-top: 30px; background: pink; width: 70%; height: 500px; float: left; padding-left: 15px;}
+#breadbox {position: relative; height: 700px; width: 100%; overflow: auto; }
+.logo {position: relative; float: left; width: 300px; height: 500px; background-repeat: no-repeat; overflow: auto; background-image: url(images/logo_sml.png); background-size: 300px 309px;}
+#homebox {position: relative; overflow: auto; padding: 0px 0px 0px 40px; margin-top: 30px;}
+h2 {font-size: 24px; font-family: Arial, sans-serif; margin: 0px; padding: 0px; text-transform: uppercase; color: #E56633;}
+h3 {font-size: 18px; font-family: Arial, sans-serif; margin: 0px; padding: 0px 0px 15px 0px; color: #5E5548;}
+h4 {font-size: 20px; font-family: Garamond, serif; font-weight: normal; margin: 0px; padding: 0px;}
+.tagline {width: 400px; margin-top: 15px;}
+#listbox {position: relative; margin-top: 30px; width: 30%; height: 500px; float: left; padding-right: 15px;}
+#listmap {position: relative; margin-top: 30px; width: 70%; height: 500px; float: left; padding-left: 15px;}
 .listGroup {margin: 10px 0px; padding: 3px 0px 3px 7px;; background: #fff;}
 .listGroup a, .listGroup a:visted, .listgroup a:active {display: block; text-decoration: none;}
 .listGroup a:hover {display: block; width: 100%; height: 100%; background: #acacac;}
 p {margin: 0px; padding: 0px;}
-.listName {font-family: Garamond, sans-serif; font-size: 18px; color: orange;}
+.listName {font-family: Garamond, sans-serif; font-size: 18px; color: #E56633;}
 .listCity {font-family: Arial, sans-serif; font-size: 10px; letter-spacing: 1px; color: #9BB89D; text-transform: uppercase;}
+.quickLinks {font-family: Garamond, sans-serif; font-weight: bold; font-size: 18px; color: #5E5548; position: relative; top: 350px; text-align: center; }
   
   </style>
 
@@ -111,10 +113,12 @@ p {margin: 0px; padding: 0px;}
   
   <script type="text/mustache" class="homeTemplate">
     <div id="breadbox">
-    <div class="logo"></div>
+    <div class="logo">
+    <p class="quickLinks">about | github | #omguild</p>
+    </div>
     <div id="homebox">
     <h2>Go Outside and Map!</h3>
-    <h4>Use your geo-tagged instagram photos to create
+    <h4 class="tagline">Use your geo-tagged instagram photos to create
     or add to lists of cool things in your city.</h4>
     <div id="listbox">
      <h3>Recently Updated Lists</h3>
@@ -134,7 +138,7 @@ p {margin: 0px; padding: 0px;}
       </div><!-- end listGroup -->
     </div>
     <div id="listmap">
-    
+     <div id="mapbox"></div>
     </div>
     </div>
     </div>

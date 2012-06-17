@@ -99,6 +99,8 @@ $(function() {
     },
 	  home: function() {
       $('#wrapper').html(render('home'))
+      showMap()
+      locateAndSetMap()
 	  }
   }
   
