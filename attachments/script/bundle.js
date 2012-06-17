@@ -958,604 +958,864 @@ exports.inherits = function(ctor, superCtor) {
 
 });
 
-require.define("fs", function (require, module, exports, __dirname, __filename) {
-// nothing to see here... no file methods for the browser
+require.define("url", function (require, module, exports, __dirname, __filename) {
+var punycode = { encode : function (s) { return s } };
 
-});
+exports.parse = urlParse;
+exports.resolve = urlResolve;
+exports.resolveObject = urlResolveObject;
+exports.format = urlFormat;
 
-require.define("/node_modules/csv/package.json", function (require, module, exports, __dirname, __filename) {
-module.exports = {}
-});
-
-require.define("/node_modules/csv/index.js", function (require, module, exports, __dirname, __filename) {
-
-module.exports = require('./lib/csv');
-
-});
-
-require.define("/node_modules/csv/lib/csv.js", function (require, module, exports, __dirname, __filename) {
-// Module CSV - Copyright David Worms <open@adaltas.com> (BSD Licensed)
-
-var EventEmitter = require('events').EventEmitter,
-    fs = require('fs');
-
-// Utils function
-var merge = function(obj1,obj2){
-    var r = obj1||{};
-    for(var key in obj2){
-        r[key] = obj2[key];
+function arrayIndexOf(array, subject) {
+    for (var i = 0, j = array.length; i < j; i++) {
+        if(array[i] == subject) return i;
     }
-    return r;
+    return -1;
 }
 
-module.exports = function(){
-    var state = {
-        count: 0,
-        countWriten: 0,
-        field: '',
-        line: [],
-        lastC: '',
-        quoted: false,
-        commented: false,
-        buffer: null,
-        bufferPosition: 0
-    }
-    // Are we currently inside the transform callback? If so,
-    // we shouldn't increment `state.count` which count provided lines
-    var transforming = false;
-    
-    // Defined Class
-    
-    var CSV = function(){
-        // Set options
-        this.readOptions = {
-            delimiter: ',',
-            quote: '"',
-            escape: '"',
-            columns: null,
-            flags: 'r',
-            encoding: 'utf8',
-            bufferSize: 8 * 1024 * 1024,
-            trim: false,
-            ltrim: false,
-            rtrim: false
-        };
-        this.writeOptions = {
-            delimiter: null,
-            quote: null,
-            escape: null,
-            columns: null,
-            header: false,
-            lineBreaks: null,
-            flags: 'w',
-            encoding: 'utf8',
-            bufferSize: null,
-            end: true // Call `end()` on close
-        };
-        // A boolean that is true by default, but turns false after an 'error' occurred, 
-        // the stream came to an 'end', or destroy() was called. 
-        this.readable = true;
-        // A boolean that is true by default, but turns false after an 'error' occurred 
-        // or end() / destroy() was called. 
-        this.writable = true;
-    }
-    CSV.prototype.__proto__ = EventEmitter.prototype;
-    
-    // Reading API
-    
-    CSV.prototype.from = function(data,options){
-        if(options) merge(this.readOptions,options);
-        var self = this;
-        process.nextTick(function(){
-            if(data instanceof Array){
-                if( csv.writeOptions.lineBreaks === null ){
-                    csv.writeOptions.lineBreaks = "\r\n";
-                }
-                for(var i=0; i<data.length; i++){
-                    state.line = data[i];
-                    flush();
-                }
-            }else{
-                try{
-                    parse(data);
-                }catch(e){
-                    self.emit('error', e);
-                    return;
-                }
-            }
-            self.end();
-        });
-        return this;
-    }
-    CSV.prototype.fromStream = function(readStream, options){
-        if(options) merge(this.readOptions,options);
-        var self = this;
-        readStream.on('data', function(data) { 
-            try{
-                parse(data);
-            }catch(e){
-                self.emit('error', e);
-                // Destroy the input stream
-                this.destroy();
-            }
-        });
-        readStream.on('error', function(error) { self.emit('error', error) });
-        readStream.on('end', function() {
-            self.end();
-        });
-        this.readStream = readStream;
-        return this;
-    }
-    CSV.prototype.fromPath = function(path, options){
-        if(options) merge(this.readOptions,options);
-        var stream = fs.createReadStream(path, this.readOptions);
-        stream.setEncoding(this.readOptions.encoding);
-        return this.fromStream(stream, null);
-    }
-    
-    // Writting API
-    
-    /**
-     * Write data.
-     * Data may be string in which case it could span multiple lines. If data 
-     * is an object or an array, it must represent a single line.
-     * Preserve is for line which are not considered as CSV data.
-     */
-    CSV.prototype.write = function(data, preserve){
-        if(typeof data === 'string' && !preserve){
-            return parse(data);
-        }
-        write(data, preserve);
-        if(!transforming && !preserve){
-            state.count++;
-        }
-    }
-    
-    CSV.prototype.end = function(){
-        if (state.quoted) {
-            csv.emit('error', new Error('Quoted field not terminated'));
-        } else {
-            // dump open record
-            if (state.field) {
-                if(csv.readOptions.trim || csv.readOptions.rtrim){
-                    state.field = state.field.trimRight();
-                }
-                state.line.push(state.field);
-                state.field = '';
-            }
-            if (state.line.length > 0) {
-                flush();
-            }
-            if(csv.writeStream){
-                if(state.bufferPosition !== 0){
-                    csv.writeStream.write(state.buffer.slice(0, state.bufferPosition));
-                }
-                if(this.writeOptions.end){
-                    csv.writeStream.end();
-                }else{
-                    csv.emit('end', state.count);
-                    csv.readable = false;
-                }
-            }else{
-                csv.emit('end', state.count);
-                csv.readable = false;
-            }
-        }
-    }
-    
-    CSV.prototype.toStream = function(writeStream, options){
-        if(options) merge(this.writeOptions,options);
-        var self = this;
-        switch(this.writeOptions.lineBreaks){
-            case 'auto':
-                this.writeOptions.lineBreaks = null;
-                break;
-            case 'unix':
-                this.writeOptions.lineBreaks = "\n";
-                break;
-            case 'mac':
-                this.writeOptions.lineBreaks = "\r";
-                break;
-            case 'windows':
-                this.writeOptions.lineBreaks = "\r\n";
-                break;
-            case 'unicode':
-                this.writeOptions.lineBreaks = "\u2028";
-                break;
-        }
-        writeStream.on('close', function(){
-            self.emit('end', state.count);
-            self.readable = false;
-            self.writable = false;
-        })
-        this.writeStream = writeStream;
-        state.buffer = new Buffer(this.writeOptions.bufferSize||this.readOptions.bufferSize);
-        state.bufferPosition = 0;
-        return this;
-    }
-    
-    CSV.prototype.toPath = function(path, options){
-        // Merge user provided options
-        if(options) merge(this.writeOptions,options);
-        // clone options
-        var options = merge({},this.writeOptions);
-        // Delete end property which otherwise overwrite `WriteStream.end()`
-        delete options.end;
-        // Create the write stream
-        var stream = fs.createWriteStream(path, options);
-        return this.toStream(stream, null);
-    }
-    
-    // Transform API
-    
-    CSV.prototype.transform = function(callback){
-        this.transformer = callback;
-        return this;
-    }
-    
-    var csv = new CSV();
-    
-    // Private API
-    
-    /**
-     * Parse a string which may hold multiple lines.
-     * Private state object is enriched on each character until 
-     * flush is called on a new line
-     */
-    function parse(chars){
-        chars = '' + chars;
-        for (var i = 0, l = chars.length; i < l; i++) {
-            var c = chars.charAt(i);
-            switch (c) {
-                case csv.readOptions.escape:
-                case csv.readOptions.quote:
-                    if( state.commented ) break;
-                    var isEscape = false;
-                    if (c === csv.readOptions.escape) {
-                        // Make sure the escape is really here for escaping:
-                        // if escape is same as quote, and escape is first char of a field and it's not quoted, then it is a quote
-                        // next char should be an escape or a quote
-                        var nextChar = chars.charAt(i + 1);
-                        if( !( csv.readOptions.escape === csv.readOptions.quote && !state.field && !state.quoted )
-                        &&   ( nextChar === csv.readOptions.escape || nextChar === csv.readOptions.quote ) ) {
-                            i++;
-                            isEscape = true;
-                            c = chars.charAt(i);
-                            state.field += c;
-                        }
-                    }
-                    if (!isEscape && (c === csv.readOptions.quote)) {
-                        if (state.field && !state.quoted) {
-                            // Treat quote as a regular character
-                            state.field += c;
-                            break;
-                        }
-                        if (state.quoted) {
-                            // Make sure a closing quote is followed by a delimiter
-                            var nextChar = chars.charAt(i + 1);
-                            if (nextChar && nextChar != '\r' && nextChar != '\n' && nextChar !== csv.readOptions.delimiter) {
-                                throw new Error('Invalid closing quote; found "' + nextChar + '" instead of delimiter "' + csv.readOptions.delimiter + '"');
-                            }
-                            state.quoted = false;
-                        } else if (state.field === '') {
-                            state.quoted = true;
-                        }
-                    }
-                    break;
-                case csv.readOptions.delimiter:
-                    if( state.commented ) break;
-                    if( state.quoted ) {
-                        state.field += c;
-                    }else{
-                        if(csv.readOptions.trim || csv.readOptions.rtrim){
-                            state.field = state.field.trimRight();
-                        }
-                        state.line.push(state.field);
-                        state.field = '';
-                    }
-                    break;
-                case '\n':
-                    if(state.quoted) {
-                        state.field += c;
-                        break;
-                    }
-                    if( !csv.readOptions.quoted && state.lastC === '\r' ){
-                        break;
-                    }
-                case '\r':
-                    if(state.quoted) {
-                        state.field += c;
-                        break;
-                    }
-                    if( csv.writeOptions.lineBreaks === null ){
-                        // Auto-discovery of linebreaks
-                        csv.writeOptions.lineBreaks = c + ( c === '\r' && chars.charAt(i+1) === '\n' ? '\n' : '' );
-                    }
-                    if(csv.readOptions.trim || csv.readOptions.rtrim){
-                        state.field = state.field.trimRight();
-                    }
-                    state.line.push(state.field);
-                    state.field = '';
-                    flush();
-                    break;
-                case ' ':
-                case '\t':
-                    if(state.quoted || (!csv.readOptions.trim && !csv.readOptions.ltrim ) || state.field) {
-                        state.field += c;
-                        break;
-                    }
-                    break;
-                default:
-                    if(state.commented) break;
-                    state.field += c;
-            }
-            state.lastC = c;
-        }
-    }
-    
-    // Called by the `parse` function on each line. It will then call `write`
-    function flush(){
-        if(csv.readOptions.columns){
-            if(state.count === 0 && csv.readOptions.columns === true){
-                csv.readOptions.columns = state.line;
-                state.line = [];
-                state.lastC = '';
-                return;
-            }
-            var line = {};
-            for(var i=0; i<csv.readOptions.columns.length; i++){
-                var column = csv.readOptions.columns[i];
-                line[column] = state.line[i]||null;
-            }
-            state.line = line;
-            line = null;
-        }
-        if(state.count === 0 && csv.writeOptions.header === true){
-            write(csv.writeOptions.columns || csv.readOptions.columns);
-        }
-        var line;
-        if(csv.transformer){
-            transforming = true;
-            line = csv.transformer(state.line, state.count);
-            transforming = false;
-        }else{
-            line = state.line;
-        }
-        write(line);
-        state.count++;
-        state.line = [];
-        state.lastC = '';
-    }
-    
-    /**
-     * Write a line to the written stream.
-     * Line may be an object, an array or a string
-     * Preserve is for line which are not considered as CSV data
-     */
-    function write(line, preserve){
-        if(typeof line === 'undefined' || line === null){
-            return;
-        }
-        if(!preserve){
-            try {
-                csv.emit('data', line, state.count);
-            }catch(e){
-                csv.emit('error', e);
-                csv.readable = false;
-                csv.writable = false;
-            }
-        }
-        if(typeof line === 'object'){
-            if(!(line instanceof Array)){
-                var columns = csv.writeOptions.columns || csv.readOptions.columns;
-                var _line = [];
-                if(columns){
-                    for(var i=0; i<columns.length; i++){
-                        var column = columns[i];
-                        _line[i] = (typeof line[column] === 'undefined' || line[column] === null) ? '' : line[column];
-                    }
-                }else{
-                    for(var column in line){
-                        _line.push(line[column]);
-                    }
-                }
-                line = _line;
-                _line = null;
-            }else if(csv.writeOptions.columns){
-                // We are getting an array but the user want specified output columns. In
-                // this case, we respect the columns indexes
-                line.splice(csv.writeOptions.columns.length);
-            }
-            if(line instanceof Array){
-                var newLine = state.countWriten ? csv.writeOptions.lineBreaks || "\r" : '';
-                for(var i=0; i<line.length; i++){
-                    var field = line[i];
-                    if(typeof field === 'string'){
-                        // fine 99% of the cases, keep going
-                    }else if(typeof field === 'number'){
-                        // Cast number to string
-                        field = '' + field;
-                    }else if(typeof field === 'boolean'){
-                        // Cast boolean to string
-                        field = field ? '1' : '';
-                    }else if(field instanceof Date){
-                        // Cast date to timestamp string
-                        field = '' + field.getTime();
-                    }
-                    if(field){
-                        var containsdelimiter = field.indexOf(csv.writeOptions.delimiter || csv.readOptions.delimiter) >= 0;
-                        var containsQuote = field.indexOf(csv.writeOptions.quote || csv.readOptions.quote) >= 0;
-                        var containsLinebreak = field.indexOf("\r") >= 0 || field.indexOf("\n") >= 0;
-                        if(containsQuote){
-                            field = field.replace(
-                                    new RegExp(csv.writeOptions.quote || csv.readOptions.quote,'g')
-                                  , (csv.writeOptions.escape || csv.readOptions.escape)
-                                  + (csv.writeOptions.quote || csv.readOptions.quote));
-                        }
-                        if(containsQuote || containsdelimiter || containsLinebreak){
-                            field = (csv.writeOptions.quote || csv.readOptions.quote) + field + (csv.writeOptions.quote || csv.readOptions.quote);
-                        }
-                        newLine += field;
-                    }
-                    if(i!==line.length-1){
-                        newLine += csv.writeOptions.delimiter || csv.readOptions.delimiter;
-                    }
-                }
-                line = newLine;
-            }
-        }
-        if(state.buffer){
-            if(state.bufferPosition + Buffer.byteLength(line,'utf8') > csv.readOptions.bufferSize){
-                csv.writeStream.write(state.buffer.slice(0, state.bufferPosition));
-                state.buffer = new Buffer(csv.readOptions.bufferSize);
-                state.bufferPosition = 0;
-            }
-            state.bufferPosition += state.buffer.write(line, state.bufferPosition,'utf8');
-        }
-        if(!preserve){
-            state.countWriten++;
-        }
-        return true;
-    }
-    
-    return csv;
-};
-
-});
-
-require.define("/node_modules/lump/package.json", function (require, module, exports, __dirname, __filename) {
-module.exports = {"main":"index.js"}
-});
-
-require.define("/node_modules/lump/index.js", function (require, module, exports, __dirname, __filename) {
-var Stream = require('stream');
-var util = require('util');
-var pathway = require('pathway');
-
-exports = module.exports = function (opts, size, path) {
-    if (size === undefined) {
-        // everything in opts
-    }
-    else if (Array.isArray(size)) {
-        opts = { data : opts, path : size };
-    }
-    else {
-        opts = { data : opts, size : size, path : path };
-    }
-    
-    var data = opts.path ? pathway(opts.data, opts.path) : opts.data;
-    return computeLumps(data, opts.size);
-};
-
-exports.stream = function (opts) {
-    return new Lump(opts);
-};
-
-function Lump (opts, path) {
-    if (!opts) opts = {};
-    if (typeof opts === 'number') opts = { size : opts };
-    if (!opts.size) throw new Error('required parameter "size" not given');
-    
-    this.writable = true;
-    this.size = opts.size;
-    this.path = path || opts.path || [];
-    this.data = [];
+var objectKeys = Object.keys || function objectKeys(object) {
+    if (object !== Object(object)) throw new TypeError('Invalid object');
+    var keys = [];
+    for (var key in object) if (object.hasOwnProperty(key)) keys[keys.length] = key;
+    return keys;
 }
 
-util.inherits(Lump, Stream);
+// Reference: RFC 3986, RFC 1808, RFC 2396
 
-Lump.prototype.lumps = function () {
-    return computeLumps(this.data, this.size);
-};
+// define these here so at least they only have to be
+// compiled once on the first module load.
+var protocolPattern = /^([a-z0-9.+-]+:)/i,
+    portPattern = /:[0-9]+$/,
+    // RFC 2396: characters reserved for delimiting URLs.
+    delims = ['<', '>', '"', '`', ' ', '\r', '\n', '\t'],
+    // RFC 2396: characters not allowed for various reasons.
+    unwise = ['{', '}', '|', '\\', '^', '~', '[', ']', '`'].concat(delims),
+    // Allowed by RFCs, but cause of XSS attacks.  Always escape these.
+    autoEscape = ['\''],
+    // Characters that are never ever allowed in a hostname.
+    // Note that any invalid chars are also handled, but these
+    // are the ones that are *expected* to be seen, so we fast-path
+    // them.
+    nonHostChars = ['%', '/', '?', ';', '#']
+      .concat(unwise).concat(autoEscape),
+    nonAuthChars = ['/', '@', '?', '#'].concat(delims),
+    hostnameMaxLen = 255,
+    hostnamePartPattern = /^[a-zA-Z0-9][a-z0-9A-Z_-]{0,62}$/,
+    hostnamePartStart = /^([a-zA-Z0-9][a-z0-9A-Z_-]{0,62})(.*)$/,
+    // protocols that can allow "unsafe" and "unwise" chars.
+    unsafeProtocol = {
+      'javascript': true,
+      'javascript:': true
+    },
+    // protocols that never have a hostname.
+    hostlessProtocol = {
+      'javascript': true,
+      'javascript:': true
+    },
+    // protocols that always have a path component.
+    pathedProtocol = {
+      'http': true,
+      'https': true,
+      'ftp': true,
+      'gopher': true,
+      'file': true,
+      'http:': true,
+      'ftp:': true,
+      'gopher:': true,
+      'file:': true
+    },
+    // protocols that always contain a // bit.
+    slashedProtocol = {
+      'http': true,
+      'https': true,
+      'ftp': true,
+      'gopher': true,
+      'file': true,
+      'http:': true,
+      'https:': true,
+      'ftp:': true,
+      'gopher:': true,
+      'file:': true
+    },
+    querystring = require('querystring');
 
-Lump.prototype.write = function (obj) {
-    var self = this;
-    var xs = pathway(obj, self.path);
-    self.data.push.apply(self.data, xs);
-};
+function urlParse(url, parseQueryString, slashesDenoteHost) {
+  if (url && typeof(url) === 'object' && url.href) return url;
 
-Lump.prototype.end = function () {
-    this.emit('end');
-};
+  if (typeof url !== 'string') {
+    throw new TypeError("Parameter 'url' must be a string, not " + typeof url);
+  }
 
-function computeLumps (data, size) {
-    var min = Math.min.apply(null, data);
-    var max = Math.max.apply(null, data);
-    var step = (max - min) / size;
-    
-    var lumps = [];
-    var sorted = data.sort();
-    var ix = 0;
-    
-    for (var x = min; x < max; x += step) {
-        var lump = { min : x, max : x + step, count : 0 };
-        for (; sorted[ix] < x + step; ix++) {
-            lump.count ++;
-        }
-        lumps.push(lump);
+  var out = {},
+      rest = url;
+
+  // cut off any delimiters.
+  // This is to support parse stuff like "<http://foo.com>"
+  for (var i = 0, l = rest.length; i < l; i++) {
+    if (arrayIndexOf(delims, rest.charAt(i)) === -1) break;
+  }
+  if (i !== 0) rest = rest.substr(i);
+
+
+  var proto = protocolPattern.exec(rest);
+  if (proto) {
+    proto = proto[0];
+    var lowerProto = proto.toLowerCase();
+    out.protocol = lowerProto;
+    rest = rest.substr(proto.length);
+  }
+
+  // figure out if it's got a host
+  // user@server is *always* interpreted as a hostname, and url
+  // resolution will treat //foo/bar as host=foo,path=bar because that's
+  // how the browser resolves relative URLs.
+  if (slashesDenoteHost || proto || rest.match(/^\/\/[^@\/]+@[^@\/]+/)) {
+    var slashes = rest.substr(0, 2) === '//';
+    if (slashes && !(proto && hostlessProtocol[proto])) {
+      rest = rest.substr(2);
+      out.slashes = true;
     }
-    return lumps;
-}
+  }
 
-});
+  if (!hostlessProtocol[proto] &&
+      (slashes || (proto && !slashedProtocol[proto]))) {
+    // there's a hostname.
+    // the first instance of /, ?, ;, or # ends the host.
+    // don't enforce full RFC correctness, just be unstupid about it.
 
-require.define("/node_modules/lump/node_modules/pathway/package.json", function (require, module, exports, __dirname, __filename) {
-module.exports = {"main":"index.js"}
-});
-
-require.define("/node_modules/lump/node_modules/pathway/index.js", function (require, module, exports, __dirname, __filename) {
-var concatMap = require('concat-map');
-
-module.exports = function pathway (obj, path) {
-    return path.reduce(function (nodes, p, ip) {
-        if (typeof p === 'function') {
-            return withFilter(nodes, p)
+    // If there is an @ in the hostname, then non-host chars *are* allowed
+    // to the left of the first @ sign, unless some non-auth character
+    // comes *before* the @-sign.
+    // URLs are obnoxious.
+    var atSign = arrayIndexOf(rest, '@');
+    if (atSign !== -1) {
+      // there *may be* an auth
+      var hasAuth = true;
+      for (var i = 0, l = nonAuthChars.length; i < l; i++) {
+        var index = arrayIndexOf(rest, nonAuthChars[i]);
+        if (index !== -1 && index < atSign) {
+          // not a valid auth.  Something like http://foo.com/bar@baz/
+          hasAuth = false;
+          break;
         }
-        else if (typeof p === 'boolean') {
-            return withFilter(nodes, function () { return p });
-        }
-        else if (isRegExp(p)) {
-            return withFilter(nodes, function (key) { return p.test(key) })
-        }
-        else {
-            return concatMap(nodes, function (node, ix) {
-                if (!node[p]) return [];
-                return [ node[p] ];
-            })
-        }
-    }, [ obj ]);
-};
-
-function withFilter (nodes, fn) {
-    return concatMap(nodes, function (node) {
-        if (typeof node !== 'object') return [];
-        
-        return Object.keys(node)
-            .filter(function (key) { return fn(key, node[key]) })
-            .map(function (key) { return node[key] })
-        ;
-    });
-}
-
-function isRegExp (x) {
-    return Object.prototype.toString.call(x) === '[object RegExp]';
-}
-
-});
-
-require.define("/node_modules/lump/node_modules/pathway/node_modules/concat-map/package.json", function (require, module, exports, __dirname, __filename) {
-module.exports = {"main":"index.js"}
-});
-
-require.define("/node_modules/lump/node_modules/pathway/node_modules/concat-map/index.js", function (require, module, exports, __dirname, __filename) {
-module.exports = function (xs, fn) {
-    var res = [];
-    for (var i = 0; i < xs.length; i++) {
-        var x = fn(xs[i], i);
-        if (Array.isArray(x)) res.push.apply(res, x);
-        else res.push(x);
+      }
+      if (hasAuth) {
+        // pluck off the auth portion.
+        out.auth = rest.substr(0, atSign);
+        rest = rest.substr(atSign + 1);
+      }
     }
-    return res;
+
+    var firstNonHost = -1;
+    for (var i = 0, l = nonHostChars.length; i < l; i++) {
+      var index = arrayIndexOf(rest, nonHostChars[i]);
+      if (index !== -1 &&
+          (firstNonHost < 0 || index < firstNonHost)) firstNonHost = index;
+    }
+
+    if (firstNonHost !== -1) {
+      out.host = rest.substr(0, firstNonHost);
+      rest = rest.substr(firstNonHost);
+    } else {
+      out.host = rest;
+      rest = '';
+    }
+
+    // pull out port.
+    var p = parseHost(out.host);
+    var keys = objectKeys(p);
+    for (var i = 0, l = keys.length; i < l; i++) {
+      var key = keys[i];
+      out[key] = p[key];
+    }
+
+    // we've indicated that there is a hostname,
+    // so even if it's empty, it has to be present.
+    out.hostname = out.hostname || '';
+
+    // validate a little.
+    if (out.hostname.length > hostnameMaxLen) {
+      out.hostname = '';
+    } else {
+      var hostparts = out.hostname.split(/\./);
+      for (var i = 0, l = hostparts.length; i < l; i++) {
+        var part = hostparts[i];
+        if (!part) continue;
+        if (!part.match(hostnamePartPattern)) {
+          var newpart = '';
+          for (var j = 0, k = part.length; j < k; j++) {
+            if (part.charCodeAt(j) > 127) {
+              // we replace non-ASCII char with a temporary placeholder
+              // we need this to make sure size of hostname is not
+              // broken by replacing non-ASCII by nothing
+              newpart += 'x';
+            } else {
+              newpart += part[j];
+            }
+          }
+          // we test again with ASCII char only
+          if (!newpart.match(hostnamePartPattern)) {
+            var validParts = hostparts.slice(0, i);
+            var notHost = hostparts.slice(i + 1);
+            var bit = part.match(hostnamePartStart);
+            if (bit) {
+              validParts.push(bit[1]);
+              notHost.unshift(bit[2]);
+            }
+            if (notHost.length) {
+              rest = '/' + notHost.join('.') + rest;
+            }
+            out.hostname = validParts.join('.');
+            break;
+          }
+        }
+      }
+    }
+
+    // hostnames are always lower case.
+    out.hostname = out.hostname.toLowerCase();
+
+    // IDNA Support: Returns a puny coded representation of "domain".
+    // It only converts the part of the domain name that
+    // has non ASCII characters. I.e. it dosent matter if
+    // you call it with a domain that already is in ASCII.
+    var domainArray = out.hostname.split('.');
+    var newOut = [];
+    for (var i = 0; i < domainArray.length; ++i) {
+      var s = domainArray[i];
+      newOut.push(s.match(/[^A-Za-z0-9_-]/) ?
+          'xn--' + punycode.encode(s) : s);
+    }
+    out.hostname = newOut.join('.');
+
+    out.host = (out.hostname || '') +
+        ((out.port) ? ':' + out.port : '');
+    out.href += out.host;
+  }
+
+  // now rest is set to the post-host stuff.
+  // chop off any delim chars.
+  if (!unsafeProtocol[lowerProto]) {
+
+    // First, make 100% sure that any "autoEscape" chars get
+    // escaped, even if encodeURIComponent doesn't think they
+    // need to be.
+    for (var i = 0, l = autoEscape.length; i < l; i++) {
+      var ae = autoEscape[i];
+      var esc = encodeURIComponent(ae);
+      if (esc === ae) {
+        esc = escape(ae);
+      }
+      rest = rest.split(ae).join(esc);
+    }
+
+    // Now make sure that delims never appear in a url.
+    var chop = rest.length;
+    for (var i = 0, l = delims.length; i < l; i++) {
+      var c = arrayIndexOf(rest, delims[i]);
+      if (c !== -1) {
+        chop = Math.min(c, chop);
+      }
+    }
+    rest = rest.substr(0, chop);
+  }
+
+
+  // chop off from the tail first.
+  var hash = arrayIndexOf(rest, '#');
+  if (hash !== -1) {
+    // got a fragment string.
+    out.hash = rest.substr(hash);
+    rest = rest.slice(0, hash);
+  }
+  var qm = arrayIndexOf(rest, '?');
+  if (qm !== -1) {
+    out.search = rest.substr(qm);
+    out.query = rest.substr(qm + 1);
+    if (parseQueryString) {
+      out.query = querystring.parse(out.query);
+    }
+    rest = rest.slice(0, qm);
+  } else if (parseQueryString) {
+    // no query string, but parseQueryString still requested
+    out.search = '';
+    out.query = {};
+  }
+  if (rest) out.pathname = rest;
+  if (slashedProtocol[proto] &&
+      out.hostname && !out.pathname) {
+    out.pathname = '/';
+  }
+
+  //to support http.request
+  if (out.pathname || out.search) {
+    out.path = (out.pathname ? out.pathname : '') +
+               (out.search ? out.search : '');
+  }
+
+  // finally, reconstruct the href based on what has been validated.
+  out.href = urlFormat(out);
+  return out;
+}
+
+// format a parsed object into a url string
+function urlFormat(obj) {
+  // ensure it's an object, and not a string url.
+  // If it's an obj, this is a no-op.
+  // this way, you can call url_format() on strings
+  // to clean up potentially wonky urls.
+  if (typeof(obj) === 'string') obj = urlParse(obj);
+
+  var auth = obj.auth || '';
+  if (auth) {
+    auth = auth.split('@').join('%40');
+    for (var i = 0, l = nonAuthChars.length; i < l; i++) {
+      var nAC = nonAuthChars[i];
+      auth = auth.split(nAC).join(encodeURIComponent(nAC));
+    }
+    auth += '@';
+  }
+
+  var protocol = obj.protocol || '',
+      host = (obj.host !== undefined) ? auth + obj.host :
+          obj.hostname !== undefined ? (
+              auth + obj.hostname +
+              (obj.port ? ':' + obj.port : '')
+          ) :
+          false,
+      pathname = obj.pathname || '',
+      query = obj.query &&
+              ((typeof obj.query === 'object' &&
+                objectKeys(obj.query).length) ?
+                 querystring.stringify(obj.query) :
+                 '') || '',
+      search = obj.search || (query && ('?' + query)) || '',
+      hash = obj.hash || '';
+
+  if (protocol && protocol.substr(-1) !== ':') protocol += ':';
+
+  // only the slashedProtocols get the //.  Not mailto:, xmpp:, etc.
+  // unless they had them to begin with.
+  if (obj.slashes ||
+      (!protocol || slashedProtocol[protocol]) && host !== false) {
+    host = '//' + (host || '');
+    if (pathname && pathname.charAt(0) !== '/') pathname = '/' + pathname;
+  } else if (!host) {
+    host = '';
+  }
+
+  if (hash && hash.charAt(0) !== '#') hash = '#' + hash;
+  if (search && search.charAt(0) !== '?') search = '?' + search;
+
+  return protocol + host + pathname + search + hash;
+}
+
+function urlResolve(source, relative) {
+  return urlFormat(urlResolveObject(source, relative));
+}
+
+function urlResolveObject(source, relative) {
+  if (!source) return relative;
+
+  source = urlParse(urlFormat(source), false, true);
+  relative = urlParse(urlFormat(relative), false, true);
+
+  // hash is always overridden, no matter what.
+  source.hash = relative.hash;
+
+  if (relative.href === '') {
+    source.href = urlFormat(source);
+    return source;
+  }
+
+  // hrefs like //foo/bar always cut to the protocol.
+  if (relative.slashes && !relative.protocol) {
+    relative.protocol = source.protocol;
+    //urlParse appends trailing / to urls like http://www.example.com
+    if (slashedProtocol[relative.protocol] &&
+        relative.hostname && !relative.pathname) {
+      relative.path = relative.pathname = '/';
+    }
+    relative.href = urlFormat(relative);
+    return relative;
+  }
+
+  if (relative.protocol && relative.protocol !== source.protocol) {
+    // if it's a known url protocol, then changing
+    // the protocol does weird things
+    // first, if it's not file:, then we MUST have a host,
+    // and if there was a path
+    // to begin with, then we MUST have a path.
+    // if it is file:, then the host is dropped,
+    // because that's known to be hostless.
+    // anything else is assumed to be absolute.
+    if (!slashedProtocol[relative.protocol]) {
+      relative.href = urlFormat(relative);
+      return relative;
+    }
+    source.protocol = relative.protocol;
+    if (!relative.host && !hostlessProtocol[relative.protocol]) {
+      var relPath = (relative.pathname || '').split('/');
+      while (relPath.length && !(relative.host = relPath.shift()));
+      if (!relative.host) relative.host = '';
+      if (!relative.hostname) relative.hostname = '';
+      if (relPath[0] !== '') relPath.unshift('');
+      if (relPath.length < 2) relPath.unshift('');
+      relative.pathname = relPath.join('/');
+    }
+    source.pathname = relative.pathname;
+    source.search = relative.search;
+    source.query = relative.query;
+    source.host = relative.host || '';
+    source.auth = relative.auth;
+    source.hostname = relative.hostname || relative.host;
+    source.port = relative.port;
+    //to support http.request
+    if (source.pathname !== undefined || source.search !== undefined) {
+      source.path = (source.pathname ? source.pathname : '') +
+                    (source.search ? source.search : '');
+    }
+    source.slashes = source.slashes || relative.slashes;
+    source.href = urlFormat(source);
+    return source;
+  }
+
+  var isSourceAbs = (source.pathname && source.pathname.charAt(0) === '/'),
+      isRelAbs = (
+          relative.host !== undefined ||
+          relative.pathname && relative.pathname.charAt(0) === '/'
+      ),
+      mustEndAbs = (isRelAbs || isSourceAbs ||
+                    (source.host && relative.pathname)),
+      removeAllDots = mustEndAbs,
+      srcPath = source.pathname && source.pathname.split('/') || [],
+      relPath = relative.pathname && relative.pathname.split('/') || [],
+      psychotic = source.protocol &&
+          !slashedProtocol[source.protocol];
+
+  // if the url is a non-slashed url, then relative
+  // links like ../.. should be able
+  // to crawl up to the hostname, as well.  This is strange.
+  // source.protocol has already been set by now.
+  // Later on, put the first path part into the host field.
+  if (psychotic) {
+
+    delete source.hostname;
+    delete source.port;
+    if (source.host) {
+      if (srcPath[0] === '') srcPath[0] = source.host;
+      else srcPath.unshift(source.host);
+    }
+    delete source.host;
+    if (relative.protocol) {
+      delete relative.hostname;
+      delete relative.port;
+      if (relative.host) {
+        if (relPath[0] === '') relPath[0] = relative.host;
+        else relPath.unshift(relative.host);
+      }
+      delete relative.host;
+    }
+    mustEndAbs = mustEndAbs && (relPath[0] === '' || srcPath[0] === '');
+  }
+
+  if (isRelAbs) {
+    // it's absolute.
+    source.host = (relative.host || relative.host === '') ?
+                      relative.host : source.host;
+    source.hostname = (relative.hostname || relative.hostname === '') ?
+                      relative.hostname : source.hostname;
+    source.search = relative.search;
+    source.query = relative.query;
+    srcPath = relPath;
+    // fall through to the dot-handling below.
+  } else if (relPath.length) {
+    // it's relative
+    // throw away the existing file, and take the new path instead.
+    if (!srcPath) srcPath = [];
+    srcPath.pop();
+    srcPath = srcPath.concat(relPath);
+    source.search = relative.search;
+    source.query = relative.query;
+  } else if ('search' in relative) {
+    // just pull out the search.
+    // like href='?foo'.
+    // Put this after the other two cases because it simplifies the booleans
+    if (psychotic) {
+      source.hostname = source.host = srcPath.shift();
+      //occationaly the auth can get stuck only in host
+      //this especialy happens in cases like
+      //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
+      var authInHost = source.host && arrayIndexOf(source.host, '@') > 0 ?
+                       source.host.split('@') : false;
+      if (authInHost) {
+        source.auth = authInHost.shift();
+        source.host = source.hostname = authInHost.shift();
+      }
+    }
+    source.search = relative.search;
+    source.query = relative.query;
+    //to support http.request
+    if (source.pathname !== undefined || source.search !== undefined) {
+      source.path = (source.pathname ? source.pathname : '') +
+                    (source.search ? source.search : '');
+    }
+    source.href = urlFormat(source);
+    return source;
+  }
+  if (!srcPath.length) {
+    // no path at all.  easy.
+    // we've already handled the other stuff above.
+    delete source.pathname;
+    //to support http.request
+    if (!source.search) {
+      source.path = '/' + source.search;
+    } else {
+      delete source.path;
+    }
+    source.href = urlFormat(source);
+    return source;
+  }
+  // if a url ENDs in . or .., then it must get a trailing slash.
+  // however, if it ends in anything else non-slashy,
+  // then it must NOT get a trailing slash.
+  var last = srcPath.slice(-1)[0];
+  var hasTrailingSlash = (
+      (source.host || relative.host) && (last === '.' || last === '..') ||
+      last === '');
+
+  // strip single dots, resolve double dots to parent dir
+  // if the path tries to go above the root, `up` ends up > 0
+  var up = 0;
+  for (var i = srcPath.length; i >= 0; i--) {
+    last = srcPath[i];
+    if (last == '.') {
+      srcPath.splice(i, 1);
+    } else if (last === '..') {
+      srcPath.splice(i, 1);
+      up++;
+    } else if (up) {
+      srcPath.splice(i, 1);
+      up--;
+    }
+  }
+
+  // if the path is allowed to go above the root, restore leading ..s
+  if (!mustEndAbs && !removeAllDots) {
+    for (; up--; up) {
+      srcPath.unshift('..');
+    }
+  }
+
+  if (mustEndAbs && srcPath[0] !== '' &&
+      (!srcPath[0] || srcPath[0].charAt(0) !== '/')) {
+    srcPath.unshift('');
+  }
+
+  if (hasTrailingSlash && (srcPath.join('/').substr(-1) !== '/')) {
+    srcPath.push('');
+  }
+
+  var isAbsolute = srcPath[0] === '' ||
+      (srcPath[0] && srcPath[0].charAt(0) === '/');
+
+  // put the host back
+  if (psychotic) {
+    source.hostname = source.host = isAbsolute ? '' :
+                                    srcPath.length ? srcPath.shift() : '';
+    //occationaly the auth can get stuck only in host
+    //this especialy happens in cases like
+    //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
+    var authInHost = source.host && arrayIndexOf(source.host, '@') > 0 ?
+                     source.host.split('@') : false;
+    if (authInHost) {
+      source.auth = authInHost.shift();
+      source.host = source.hostname = authInHost.shift();
+    }
+  }
+
+  mustEndAbs = mustEndAbs || (source.host && srcPath.length);
+
+  if (mustEndAbs && !isAbsolute) {
+    srcPath.unshift('');
+  }
+
+  source.pathname = srcPath.join('/');
+  //to support request.http
+  if (source.pathname !== undefined || source.search !== undefined) {
+    source.path = (source.pathname ? source.pathname : '') +
+                  (source.search ? source.search : '');
+  }
+  source.auth = relative.auth || source.auth;
+  source.slashes = source.slashes || relative.slashes;
+  source.href = urlFormat(source);
+  return source;
+}
+
+function parseHost(host) {
+  var out = {};
+  var port = portPattern.exec(host);
+  if (port) {
+    port = port[0];
+    out.port = port.substr(1);
+    host = host.substr(0, host.length - port.length);
+  }
+  if (host) out.hostname = host;
+  return out;
+}
+
+});
+
+require.define("querystring", function (require, module, exports, __dirname, __filename) {
+var isArray = typeof Array.isArray === 'function'
+    ? Array.isArray
+    : function (xs) {
+        return Object.prototype.toString.call(xs) === '[object Array]'
+    };
+
+var objectKeys = Object.keys || function objectKeys(object) {
+    if (object !== Object(object)) throw new TypeError('Invalid object');
+    var keys = [];
+    for (var key in object) if (object.hasOwnProperty(key)) keys[keys.length] = key;
+    return keys;
+}
+
+
+/*!
+ * querystring
+ * Copyright(c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+ * MIT Licensed
+ */
+
+/**
+ * Library version.
+ */
+
+exports.version = '0.3.1';
+
+/**
+ * Object#toString() ref for stringify().
+ */
+
+var toString = Object.prototype.toString;
+
+/**
+ * Cache non-integer test regexp.
+ */
+
+var notint = /[^0-9]/;
+
+/**
+ * Parse the given query `str`, returning an object.
+ *
+ * @param {String} str
+ * @return {Object}
+ * @api public
+ */
+
+exports.parse = function(str){
+  if (null == str || '' == str) return {};
+
+  function promote(parent, key) {
+    if (parent[key].length == 0) return parent[key] = {};
+    var t = {};
+    for (var i in parent[key]) t[i] = parent[key][i];
+    parent[key] = t;
+    return t;
+  }
+
+  return String(str)
+    .split('&')
+    .reduce(function(ret, pair){
+      try{ 
+        pair = decodeURIComponent(pair.replace(/\+/g, ' '));
+      } catch(e) {
+        // ignore
+      }
+
+      var eql = pair.indexOf('=')
+        , brace = lastBraceInKey(pair)
+        , key = pair.substr(0, brace || eql)
+        , val = pair.substr(brace || eql, pair.length)
+        , val = val.substr(val.indexOf('=') + 1, val.length)
+        , parent = ret;
+
+      // ?foo
+      if ('' == key) key = pair, val = '';
+
+      // nested
+      if (~key.indexOf(']')) {
+        var parts = key.split('[')
+          , len = parts.length
+          , last = len - 1;
+
+        function parse(parts, parent, key) {
+          var part = parts.shift();
+
+          // end
+          if (!part) {
+            if (isArray(parent[key])) {
+              parent[key].push(val);
+            } else if ('object' == typeof parent[key]) {
+              parent[key] = val;
+            } else if ('undefined' == typeof parent[key]) {
+              parent[key] = val;
+            } else {
+              parent[key] = [parent[key], val];
+            }
+          // array
+          } else {
+            obj = parent[key] = parent[key] || [];
+            if (']' == part) {
+              if (isArray(obj)) {
+                if ('' != val) obj.push(val);
+              } else if ('object' == typeof obj) {
+                obj[objectKeys(obj).length] = val;
+              } else {
+                obj = parent[key] = [parent[key], val];
+              }
+            // prop
+            } else if (~part.indexOf(']')) {
+              part = part.substr(0, part.length - 1);
+              if(notint.test(part) && isArray(obj)) obj = promote(parent, key);
+              parse(parts, obj, part);
+            // key
+            } else {
+              if(notint.test(part) && isArray(obj)) obj = promote(parent, key);
+              parse(parts, obj, part);
+            }
+          }
+        }
+
+        parse(parts, parent, 'base');
+      // optimize
+      } else {
+        if (notint.test(key) && isArray(parent.base)) {
+          var t = {};
+          for(var k in parent.base) t[k] = parent.base[k];
+          parent.base = t;
+        }
+        set(parent.base, key, val);
+      }
+
+      return ret;
+    }, {base: {}}).base;
 };
+
+/**
+ * Turn the given `obj` into a query string
+ *
+ * @param {Object} obj
+ * @return {String}
+ * @api public
+ */
+
+var stringify = exports.stringify = function(obj, prefix) {
+  if (isArray(obj)) {
+    return stringifyArray(obj, prefix);
+  } else if ('[object Object]' == toString.call(obj)) {
+    return stringifyObject(obj, prefix);
+  } else if ('string' == typeof obj) {
+    return stringifyString(obj, prefix);
+  } else {
+    return prefix;
+  }
+};
+
+/**
+ * Stringify the given `str`.
+ *
+ * @param {String} str
+ * @param {String} prefix
+ * @return {String}
+ * @api private
+ */
+
+function stringifyString(str, prefix) {
+  if (!prefix) throw new TypeError('stringify expects an object');
+  return prefix + '=' + encodeURIComponent(str);
+}
+
+/**
+ * Stringify the given `arr`.
+ *
+ * @param {Array} arr
+ * @param {String} prefix
+ * @return {String}
+ * @api private
+ */
+
+function stringifyArray(arr, prefix) {
+  var ret = [];
+  if (!prefix) throw new TypeError('stringify expects an object');
+  for (var i = 0; i < arr.length; i++) {
+    ret.push(stringify(arr[i], prefix + '[]'));
+  }
+  return ret.join('&');
+}
+
+/**
+ * Stringify the given `obj`.
+ *
+ * @param {Object} obj
+ * @param {String} prefix
+ * @return {String}
+ * @api private
+ */
+
+function stringifyObject(obj, prefix) {
+  var ret = []
+    , keys = objectKeys(obj)
+    , key;
+  for (var i = 0, len = keys.length; i < len; ++i) {
+    key = keys[i];
+    ret.push(stringify(obj[key], prefix
+      ? prefix + '[' + encodeURIComponent(key) + ']'
+      : encodeURIComponent(key)));
+  }
+  return ret.join('&');
+}
+
+/**
+ * Set `obj`'s `key` to `val` respecting
+ * the weird and wonderful syntax of a qs,
+ * where "foo=bar&foo=baz" becomes an array.
+ *
+ * @param {Object} obj
+ * @param {String} key
+ * @param {String} val
+ * @api private
+ */
+
+function set(obj, key, val) {
+  var v = obj[key];
+  if (undefined === v) {
+    obj[key] = val;
+  } else if (isArray(v)) {
+    v.push(val);
+  } else {
+    obj[key] = [v, val];
+  }
+}
+
+/**
+ * Locate last brace in `str` within the key.
+ *
+ * @param {String} str
+ * @return {Number}
+ * @api private
+ */
+
+function lastBraceInKey(str) {
+  var len = str.length
+    , brace
+    , c;
+  for (var i = 0; i < len; ++i) {
+    c = str[i];
+    if (']' == c) brace = false;
+    if ('[' == c) brace = true;
+    if ('=' == c && !brace) return i;
+  }
+}
 
 });

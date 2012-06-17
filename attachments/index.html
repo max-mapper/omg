@@ -5,12 +5,15 @@
   <title>OMG</title>
   
   <link href="styles/styles.css" media="screen" rel="stylesheet" type="text/css" />
+  <link href="styles/leaflet.css" media="screen" rel="stylesheet" type="text/css" />
   
   <script src="script/jquery-1.6.1.min.js"></script>
   <script src="script/jquery.mustache.js"></script>
   <script src="script/underscore.js"></script>
   <script src="script/request.js"></script>
   <script src="script/bundle.js"></script>
+  <script src="script/leaflet-src.js"></script>
+  <script src="script/director-1.0.7.js"></script>
   <script src="script/application.js"></script>
   
   <style>
@@ -19,7 +22,7 @@
   .row {margin-bottom: 7px; overflow: auto;}
   .veil {background-image: url(veil.png); background-size: 150px 150px; opacity: .7;}
   #select a {background: salmon; display: block; float: left; padding: 10px; box-shadow: 0 0 5px 
-    #888; text-decoration: none;}
+    #888; text-decoration: none; margin: 55px 0 0 35px; }
 
   </style>
 
@@ -44,9 +47,14 @@
   
   <script type="text/mustache" class="navTemplate">
    {{#token}}
-      <div class="toggle profile">
+      <div class="toggle map">
         <div class="navitem">
-          <a href="/me">Profile</a>
+          <a href="#/map">Map</a>
+        </div>
+      </div>
+      <div class="toggle list">
+        <div class="navitem">
+          <a href="#/list">List</a>
         </div>
       </div>
     {{/token}}
@@ -63,18 +71,26 @@
   </script>
   
   <script type="text/mustache" class="feedTemplate">
-  {{#items}}
-
-   <div class="box">
-    <img src="{{image}}">
-    </div>
-    
-   
-  {{/items}}
+    {{#items}}
+      <div class="box">
+        <img src="{{image}}">
+      </div>
+    {{/items}}
     <div id="select" class="button">
-       <a href="#">Add these to the list!</a>
-       </div>
+      <a href="#">Load more!</a>
+    </div>
   </script>
+  
+  <script type="text/mustache" class="mapTemplate">
+    <div id="mapbox"></div>
+  </script>
+  
+  <script type="text/mustache" class="mapMarkerTemplate">
+    <img src="{{thumbnail}}">
+    <p>{{venue}}</p>
+  </script>
+  
+  
   
   
   

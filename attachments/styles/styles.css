@@ -29,6 +29,8 @@
 /* Common styles
 -------------------------------------------------------------------------------*/
 
+#mapbox { height: 600px; }
+.leaflet-popup p { margin: 0 !important; }
 
 svg {
   font: 10px sans-serif;
@@ -115,12 +117,12 @@ h2 { font-size: 120%; padding-bottom: 15px; }
   width: 40px;
 }
 
-div {
+/*div {
   -moz-transition-duration: 1s;
   -webkit-transition-duration: 1s;
   -o-transition-duration: 1s;
   transition-duration: 1s;
-}
+}*/
 
 /* Header */
 

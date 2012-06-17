@@ -5,7 +5,6 @@ var gist = require('gist')
 var request = require('request').defaults({json: true})
 var qs = require('querystring')
 var leveldb = require('leveldb')
-var plummet = require('plummet')
 var https = require('https')
 var _ = require('underscore')
 
@@ -30,6 +29,7 @@ t.route('/me', function (req, resp) {
 
 t.route('/feed', function (req, resp) {
   url = 'https://api.instagram.com/v1/users/self/media/recent?' + qs.stringify({access_token: req.user.token})
+  if (req.qs && req.qs.next_url) url = req.qs.next_url
   request(url, function(err, res, json) {
     json.data = _.filter(json.data, function(item) { return item.location && item.location.latitude })
     resp.setHeader('content-type', 'application/json')
