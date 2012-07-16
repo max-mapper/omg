@@ -107,7 +107,6 @@ function bootstrap() {
   })
 }
 
-
 $(function() {
   var routes = {
     feed: function() {

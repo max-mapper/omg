@@ -17,6 +17,7 @@ var options = {
   clientSecret: process.env['OMG_SECRET'],
   callbackURL: process.env['OMG_VHOST'] + '/instagramcallback'
 }
+console.log(options)
 
 t.route('/', function (req, resp) {
   filed(path.join(htmldir, 'index.html')).pipe(resp)
@@ -163,7 +164,8 @@ function parseCookies(cookie) {
 
 t.plumb = plumbdb('data', function(err, db) {
   t.db = db
-  t.httpServer.listen(8000, function () {
-    console.log('dun runnin')
+  var port = 80
+  t.httpServer.listen(port, function () {
+    console.log('dun runnin on', port)
   })
 })

@@ -7,20 +7,19 @@
   "bundleDependencies": [
     "async",
     "request",
+    "gist",
     "tako",
     "filed",
-    "mapleTree",
-    "underscore",
-    "leveldb"
+    "underscore"
   ],
   "dependencies": {
-    "plumbdb": "0.0.3"
+    "plumbdb": "0.0.10"
   },
-  "version": "0.0.1",
+  "version": "0.0.1-1",
   "scripts": {
     "start": "app.js"
   },
   "engines": {
-    "node": "v0.6.x"
+    "node": "v0.8.x"
   }
 }
